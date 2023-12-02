@@ -2,6 +2,7 @@ package it.marcofranzoni.day1;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class Day1 {
@@ -12,9 +13,21 @@ public class Day1 {
 	}
 
 	private int sum = 0;
+	private final Map<Integer, String> MAPPING = Map.of(
+			1, "one",
+			2, "two",
+			3, "three",
+			4, "four",
+			5, "five",
+			6, "six",
+			7, "seven",
+			8, "eight",
+			9, "nine"
+	);
+
 
 	public int solve() throws Exception {
-		Path path = Path.of("src", "main", "resources", "day1.txt");
+		Path path = Path.of("src", "main", "resources", "day1_test.txt");
 
 		try (Stream<String> stream = Files.lines(path)) {
 			stream.forEach(this::sum);
@@ -25,11 +38,23 @@ public class Day1 {
 
 	private void sum(String line) {
 
-		int firstDigit = Character.getNumericValue(getFirstDigit(line));
-		int lastDigit = Character.getNumericValue(getLastDigit(line));
+		String convertedLine = convert(line, 1);
+		System.out.println("convertedLine=" + convertedLine);
+
+		int firstDigit = Character.getNumericValue(getFirstDigit(convertedLine));
+		int lastDigit = Character.getNumericValue(getLastDigit(convertedLine));
 
 		sum += (firstDigit * 10 + lastDigit);
 	}
+
+	private String convert(String line, int digit) {
+		if (digit == 9) {
+			return line.replaceAll(MAPPING.get(digit), String.valueOf(digit));
+		}
+
+		return convert(line.replaceAll(MAPPING.get(digit), String.valueOf(digit)), ++digit);
+	}
+
 
 	private int getFirstDigit(String line) {
 		for (int i = 0; i < line.length(); i++) {
