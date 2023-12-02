@@ -1,4 +1,4 @@
-package it.marcofranzoni.day1;
+package it.marcofranzoni.aoc2023;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,7 +13,6 @@ public class Day1 {
 		System.out.println("solution = " + solution.solve());
 	}
 
-	private int sum = 0;
 	private final Map<String, Integer> mapping;
 
 	public Day1() {
@@ -42,16 +41,10 @@ public class Day1 {
 		Path path = Path.of("src", "main", "resources", "day1.txt");
 
 		try (Stream<String> stream = Files.lines(path)) {
-			stream.forEach(this::sum);
+			return stream.mapToInt(this::calibrate).sum();
 		}
-
-		return sum;
 	}
 
-	private void sum(String line) {
-		int digitFound = calibrate(line);
-		sum += digitFound;
-	}
 
 	private int calibrate(String line) {
 		int firstDigit = 0;
@@ -63,13 +56,13 @@ public class Day1 {
 			int firstCurrentDigitIndex = line.indexOf(entry.getKey());
 			int lastCurrentDigitIndex = line.lastIndexOf(entry.getKey());
 
-			if (firstCurrentDigitIndex >= 0 && firstCurrentDigitIndex<firstDigitIndex) {
+			if (firstCurrentDigitIndex >= 0 && firstCurrentDigitIndex < firstDigitIndex) {
 				firstDigit = entry.getValue();
 				firstDigitIndex = firstCurrentDigitIndex;
 			}
 
-			if (lastCurrentDigitIndex >= 0 && lastCurrentDigitIndex>lastDigitIndex) {
-				lastDigit = entry.getValue();;
+			if (lastCurrentDigitIndex >= 0 && lastCurrentDigitIndex > lastDigitIndex) {
+				lastDigit = entry.getValue();
 				lastDigitIndex = lastCurrentDigitIndex;
 			}
 		}
