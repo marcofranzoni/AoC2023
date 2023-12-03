@@ -11,9 +11,9 @@ import java.util.stream.Stream;
 public class Day2 {
 
 	private static final Pattern PATTERN = Pattern.compile("Game (\\d+): (.*)");
-	private static final Pattern GREEN_PATTERN = Pattern.compile("\\s*(\\d+) green");
-	private static final Pattern BLUE_PATTERN = Pattern.compile("\\s*(\\d+) blue");
-	private static final Pattern RED_PATTERN = Pattern.compile("\\s*(\\d+) red");
+	private static final Pattern GREEN_PATTERN = Pattern.compile(".*?(\\d+) green.*");
+	private static final Pattern BLUE_PATTERN = Pattern.compile(".*?(\\d+) blue.*");
+	private static final Pattern RED_PATTERN = Pattern.compile(".*?(\\d+) red.*");
 
 	public static void main(String[] args) throws Exception {
 		Day2 solution = new Day2();
@@ -23,8 +23,6 @@ public class Day2 {
 		var partTwo = solution.solvePartTwo();
 		System.out.println(("solutionPartTwo = " + partTwo));
 
-		System.out.println(partOne == 1734);
-		System.out.println(partTwo == 70387);
 	}
 
 	public int solvePartOne() throws Exception {
@@ -59,38 +57,25 @@ public class Day2 {
 			String allGameSets = matcher.group(2);
 
 			var gameSets = allGameSets.split(";");
-			for (var set : gameSets) {
-				int green = 0;
-				int blue = 0;
-				int red = 0;
+			for (var gameSet : gameSets) {
+				int green = parseCubes(GREEN_PATTERN, gameSet);
+				int blue = parseCubes(BLUE_PATTERN, gameSet);
+				int red = parseCubes(RED_PATTERN, gameSet);
 
-				var colors = set.split(",");
-				for (var color : colors) {
-
-					matcher = GREEN_PATTERN.matcher(color);
-					if (matcher.matches()) {
-						green = Integer.parseInt(matcher.group(1));
-					}
-
-					matcher = BLUE_PATTERN.matcher(color);
-					if (matcher.matches()) {
-						blue = Integer.parseInt(matcher.group(1));
-					}
-
-					matcher = RED_PATTERN.matcher(color);
-					if (matcher.matches()) {
-						red = Integer.parseInt(matcher.group(1));
-					}
-				}
-
-				var gameSet = new GameSet(green, blue, red);
-				list.add(gameSet);
+				list.add(new GameSet(green, blue, red));
 			}
-		} else {
-			System.out.println("Pattern doesn't match the input string.");
 		}
 
 		return new Game(gameId, list);
+	}
+
+	private int parseCubes(Pattern pattern, String gameSet) {
+		Matcher matcher = pattern.matcher(gameSet);
+		if (matcher.matches()) {
+			return Integer.parseInt(matcher.group(1));
+		}
+
+		return 0;
 	}
 
 	private record Game(int id, List<GameSet> gameSets) {
