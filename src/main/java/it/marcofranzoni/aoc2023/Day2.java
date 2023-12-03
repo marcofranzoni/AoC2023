@@ -9,6 +9,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class Day2 {
+
+	private static final Pattern PATTERN = Pattern.compile("Game (\\d+): (.*)");
+	private static final Pattern GREEN_PATTERN = Pattern.compile("\\s*(\\d+) green");
+	private static final Pattern BLUE_PATTERN = Pattern.compile("\\s*(\\d+) blue");
+	private static final Pattern RED_PATTERN = Pattern.compile("\\s*(\\d+) red");
+
 	public static void main(String[] args) throws Exception {
 		Day2 solution = new Day2();
 		var partOne = solution.solvePartOne();
@@ -43,20 +49,16 @@ public class Day2 {
 	}
 
 	private Game toGame(String line) {
-		Pattern pattern = Pattern.compile("Game (\\d+): (.*)");
-		Pattern greenPattern = Pattern.compile("\\s*(\\d+) green");
-		Pattern bluePattern = Pattern.compile("\\s*(\\d+) blue");
-		Pattern redPattern = Pattern.compile("\\s*(\\d+) red");
-		Matcher matcher = pattern.matcher(line);
+		Matcher matcher = PATTERN.matcher(line);
 
 		int gameId = 0;
-		List<Set> list = new ArrayList<>();
+		List<GameSet> list = new ArrayList<>();
 
 		if (matcher.matches()) {
 			gameId = Integer.parseInt(matcher.group(1));
-			String sets = matcher.group(2);
+			String allGameSets = matcher.group(2);
 
-			var gameSets = sets.split(";");
+			var gameSets = allGameSets.split(";");
 			for (var set : gameSets) {
 				int green = 0;
 				int blue = 0;
@@ -65,23 +67,23 @@ public class Day2 {
 				var colors = set.split(",");
 				for (var color : colors) {
 
-					matcher = greenPattern.matcher(color);
+					matcher = GREEN_PATTERN.matcher(color);
 					if (matcher.matches()) {
 						green = Integer.parseInt(matcher.group(1));
 					}
 
-					matcher = bluePattern.matcher(color);
+					matcher = BLUE_PATTERN.matcher(color);
 					if (matcher.matches()) {
 						blue = Integer.parseInt(matcher.group(1));
 					}
 
-					matcher = redPattern.matcher(color);
+					matcher = RED_PATTERN.matcher(color);
 					if (matcher.matches()) {
 						red = Integer.parseInt(matcher.group(1));
 					}
 				}
 
-				var gameSet = new Set(green, blue, red);
+				var gameSet = new GameSet(green, blue, red);
 				list.add(gameSet);
 			}
 		} else {
@@ -91,29 +93,27 @@ public class Day2 {
 		return new Game(gameId, list);
 	}
 
-	private record Game(int id, List<Set> sets) {
-		boolean isPossible() {
-			System.out.print("gameId=" + id );
-			for (var set : sets) {
-				if (set.green() > 13 || set.blue() > 14 || set.red() > 12) {
-					System.out.println(", isPossible=false");
-					return false;
-				}
-			}
+	private record Game(int id, List<GameSet> gameSets) {
+		private static final int GREEN_THRESHOLD = 13;
+		private static final int BLUE_THRESHOLD = 14;
+		private static final int RED_THRESHOLD = 12;
 
-			System.out.println(", isPossible=true");
-			return true;
+		boolean isPossible() {
+			return gameSets.stream()
+					.noneMatch(gameSet -> gameSet.green() > GREEN_THRESHOLD
+							|| gameSet.blue() > BLUE_THRESHOLD
+							|| gameSet.red() > RED_THRESHOLD);
 		}
 
 		int power() {
-			var green = sets.stream().mapToInt(Set::green).max().orElse(0);
-			var blue = sets.stream().mapToInt(Set::blue).max().orElse(0);
-			var red = sets.stream().mapToInt(Set::red).max().orElse(0);
+			var green = gameSets.stream().mapToInt(GameSet::green).max().orElse(0);
+			var blue = gameSets.stream().mapToInt(GameSet::blue).max().orElse(0);
+			var red = gameSets.stream().mapToInt(GameSet::red).max().orElse(0);
 
 			return green * blue * red;
 		}
 
 	}
 
-	private record Set(int green, int blue, int red) {}
+	private record GameSet(int green, int blue, int red) {}
 }
