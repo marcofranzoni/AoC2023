@@ -10,20 +10,17 @@ public class Day3 {
 
 	public static void main(String[] args) throws Exception {
 		Day3 solution = new Day3();
-		System.out.println("solution = " + solution.solvePartOne());
+		var partOne = solution.solvePartOne();
+		System.out.println("solution = " + partOne);
 
+		System.out.println(partOne == 539713);
 
 	}
 
-	public int solvePartOne() throws Exception {
+	private int solvePartOne() throws Exception {
 		Path path = Path.of("src", "main", "resources", "day3.txt");
 
-		List<Coordinate> symbols = new ArrayList<>();
-
-		int y = 0;
-		for (String line : Files.readAllLines(path)) {
-			symbols.addAll(findSymbolsInLine(line, y++));
-		}
+		var symbols = findAllSymbols(path);
 
 		var adjacentNumbers = adjacentNumbers(path, symbols);
 
@@ -32,6 +29,16 @@ public class Day3 {
 		System.out.println(adjacentNumbers);
 
 		return adjacentNumbers.stream().mapToInt(Integer::parseInt).sum();
+	}
+
+	private List<Coordinate> findAllSymbols(Path path) throws IOException {
+		List<Coordinate> symbols = new ArrayList<>();
+
+		int line = 0;
+		for (String currentLine : Files.readAllLines(path)) {
+			symbols.addAll(findSymbolsInLine(currentLine, line++));
+		}
+		return symbols;
 	}
 
 	private List<Coordinate> findSymbolsInLine(String line, int yAxis) {
@@ -70,18 +77,13 @@ public class Day3 {
 		boolean isAdjacentToSymbol = false;
 		StringBuilder number = new StringBuilder();
 		for (String line : Files.readAllLines(path)) {
-			if (isAdjacentToSymbol) {
-				adjacentNumbers.add(number.toString());
-			}
-			isAdjacentToSymbol = false;
-			number.setLength(0);
-
 			for (int x=0; x<line.length(); x++) {
 				char c = line.charAt(x);
 				if (Character.isDigit(c)) {
 					isAdjacentToSymbol |= isAdjacentToSymbol(x, y, symbols);
 					number.append(c);
-				} else {
+				}
+				if (!Character.isDigit(c) || x==line.length()-1) {
 					if (isAdjacentToSymbol) {
 						adjacentNumbers.add(number.toString());
 					}
@@ -89,6 +91,7 @@ public class Day3 {
 					number.setLength(0);
 				}
 			}
+
 			y++;
 		}
 
