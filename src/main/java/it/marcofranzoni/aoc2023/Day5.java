@@ -5,22 +5,20 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 public class Day5 {
 
 	private static final Pattern MAP_LINE_PATTERN = Pattern.compile("(\\d+)\\s+(\\d+)\\s+(\\d+)");
 
-	private final Map<Long, Long> seedToSoil = new HashMap<>();
-	private final Map<Long, Long> soilToFertilizer = new HashMap<>();
-	private final Map<Long, Long> fertilizerToWater = new HashMap<>();
-	private final Map<Long, Long> waterToLight = new HashMap<>();
-	private final Map<Long, Long> lightToTemperature = new HashMap<>();
-	private final Map<Long, Long> temperatureToHumidity = new HashMap<>();
-	private final Map<Long, Long> humidityToLocation = new HashMap<>();
+	private final List<Mapping> seedToSoil = new ArrayList<>();
+	private final List<Mapping> soilToFertilizer = new ArrayList<>();
+	private final List<Mapping> fertilizerToWater = new ArrayList<>();
+	private final List<Mapping> waterToLight = new ArrayList<>();
+	private final List<Mapping> lightToTemperature = new ArrayList<>();
+	private final List<Mapping> temperatureToHumidity = new ArrayList<>();
+	private final List<Mapping> humidityToLocation = new ArrayList<>();
 
 	public static void main(String[] args) throws Exception {
 		Day5 solution = new Day5();
@@ -31,11 +29,11 @@ public class Day5 {
 	}
 
 	private long solvePartOne(Path path) throws IOException {
-		List<Seed> seeds = null;
+		List<Seed> seeds = new ArrayList<>();
 
 		try (var br = new BufferedReader(new FileReader(path.toFile()))) {
 			String line;
-			Map<Long, Long> currentMap = null;
+			List<Mapping> mappings = null;
 			while ((line = br.readLine()) != null) {
 				if (line.startsWith("seeds:")) {
 					seeds = parseSeed(line);
@@ -43,16 +41,16 @@ public class Day5 {
 				}
 
 				if (line.isBlank()) {
-					currentMap = null;
+					mappings = null;
 					continue;
 				}
 
-				if (currentMap == null) {
-					currentMap = defineMap(line);
+				if (mappings == null) {
+					mappings = defineMapping(line);
 					continue;
 				}
 
-				populateMap(currentMap, line);
+				populateMapping(mappings, line);
 			}
 		}
 
@@ -78,11 +76,21 @@ public class Day5 {
 		return lowestLocation;
 	}
 
-	private long getDestinationId(Map<Long, Long> map, long id) {
-		return map.get(id) == null ? id : map.get(id);
+	private long getDestinationId(List<Mapping> mappings, long id) {
+		boolean found = false;
+		long result = 0;
+		for (var mapping : mappings) {
+			if (id >= mapping.source && id < mapping.source() + mapping.rangeLength()) {
+				found = true;
+				result = mapping.destination() + (id - mapping.source());
+				break;
+			}
+		}
+
+		return found ? result : id;
 	}
 
-	private static void populateMap(Map<Long, Long> currentMap, String line) {
+	private static void populateMapping(List<Mapping> currentMapping, String line) {
 		var matcher = MAP_LINE_PATTERN.matcher(line);
 
 		if (matcher.matches()) {
@@ -90,14 +98,11 @@ public class Day5 {
 			long sourceRangeStart = Long.parseLong(matcher.group(2));
 			long rangeLength = Long.parseLong(matcher.group(3));
 
-			for (int i = 0; i < rangeLength; i++) {
-				currentMap.put(sourceRangeStart + i, destinationRangeStart + i);
-			}
-
+			currentMapping.add(new Mapping(destinationRangeStart, sourceRangeStart, rangeLength));
 		}
 	}
 
-	private Map<Long, Long> defineMap(String line) {
+	private List<Mapping> defineMapping(String line) {
 		String[] values = line.trim().split("\\s+");
 
 		return switch (values[0]) {
@@ -119,10 +124,12 @@ public class Day5 {
 			list.add(new Seed(Long.parseLong(seeds[i])));
 		}
 
-		System.out.println(list);
 		return list;
 	}
 
 	private record Seed(long id) {
+	}
+
+	private record Mapping(long destination, long source, long rangeLength) {
 	}
 }
