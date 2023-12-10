@@ -63,38 +63,37 @@ public class Day5 {
 
 	private long findLowestLocation(List<Seed> seeds) {
 		long lowestLocation = Long.MAX_VALUE;
+
 		for (var seed : seeds) {
 			for (long i = 0; i < seed.rangeLength(); i++) {
 				long seedId = seed.id() + i;
-				var soilId = getDestinationId(seedToSoil, seedId);
-				var fertilizerId = getDestinationId(soilToFertilizer, soilId);
-				var waterId = getDestinationId(fertilizerToWater, fertilizerId);
-				var lightId = getDestinationId(waterToLight, waterId);
-				var temperatureId = getDestinationId(lightToTemperature, lightId);
-				var humidityId = getDestinationId(temperatureToHumidity, temperatureId);
-				var locationId = getDestinationId(humidityToLocation, humidityId);
-
-				if (locationId < lowestLocation) {
-					lowestLocation = locationId;
-				}
+				long locationId = calculateLocationId(seedId);
+				lowestLocation = Math.min(lowestLocation, locationId);
 			}
 		}
 
 		return lowestLocation;
 	}
 
+	private long calculateLocationId(long seedId) {
+		long soilId = getDestinationId(seedToSoil, seedId);
+		long fertilizerId = getDestinationId(soilToFertilizer, soilId);
+		long waterId = getDestinationId(fertilizerToWater, fertilizerId);
+		long lightId = getDestinationId(waterToLight, waterId);
+		long temperatureId = getDestinationId(lightToTemperature, lightId);
+		long humidityId = getDestinationId(temperatureToHumidity, temperatureId);
+
+		return getDestinationId(humidityToLocation, humidityId);
+	}
+
 	private long getDestinationId(List<Mapping> mappings, long id) {
-		boolean found = false;
-		long result = 0;
 		for (var mapping : mappings) {
 			if (id >= mapping.source && id < mapping.source() + mapping.rangeLength()) {
-				found = true;
-				result = mapping.destination() + (id - mapping.source());
-				break;
+				return mapping.destination() + (id - mapping.source());
 			}
 		}
 
-		return found ? result : id;
+		return id;
 	}
 
 	private static void populateMapping(List<Mapping> currentMapping, String line) {
@@ -137,8 +136,8 @@ public class Day5 {
 	private static List<Seed> parseSeedPartTwo(String line) {
 		String[] seeds = line.trim().split("\\s+");
 		List<Seed> list = new ArrayList<>();
-		for (int i = 1; i < seeds.length - 1; i+=2) {
-			list.add(new Seed(Long.parseLong(seeds[i]), Long.parseLong(seeds[i+1])));
+		for (int i = 1; i < seeds.length - 1; i += 2) {
+			list.add(new Seed(Long.parseLong(seeds[i]), Long.parseLong(seeds[i + 1])));
 		}
 
 		return list;
