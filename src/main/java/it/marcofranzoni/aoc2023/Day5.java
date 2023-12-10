@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 public class Day5 {
@@ -24,11 +25,14 @@ public class Day5 {
 		Day5 solution = new Day5();
 		Path path = Path.of("src", "main", "resources", "day5.txt");
 
-		long partOne = solution.solvePartOne(path);
+		long partOne = solution.solve(path, Day5::parseSeedPartOne);
 		System.out.println("partOne=" + partOne);
+
+		long partTwo = solution.solve(path, Day5::parseSeedPartTwo);
+		System.out.println("partTwo=" + partTwo);
 	}
 
-	private long solvePartOne(Path path) throws IOException {
+	private long solve(Path path, Function<String, List<Seed>> function) throws IOException {
 		List<Seed> seeds = new ArrayList<>();
 
 		try (var br = new BufferedReader(new FileReader(path.toFile()))) {
@@ -36,7 +40,7 @@ public class Day5 {
 			List<Mapping> mappings = null;
 			while ((line = br.readLine()) != null) {
 				if (line.startsWith("seeds:")) {
-					seeds = parseSeed(line);
+					seeds = function.apply(line);
 					continue;
 				}
 
@@ -60,16 +64,19 @@ public class Day5 {
 	private long findLowestLocation(List<Seed> seeds) {
 		long lowestLocation = Long.MAX_VALUE;
 		for (var seed : seeds) {
-			var soilId = getDestinationId(seedToSoil, seed.id());
-			var fertilizerId = getDestinationId(soilToFertilizer, soilId);
-			var waterId = getDestinationId(fertilizerToWater, fertilizerId);
-			var lightId = getDestinationId(waterToLight, waterId);
-			var temperatureId = getDestinationId(lightToTemperature, lightId);
-			var humidityId = getDestinationId(temperatureToHumidity, temperatureId);
-			var locationId = getDestinationId(humidityToLocation, humidityId);
+			for (long i = 0; i < seed.rangeLength(); i++) {
+				long seedId = seed.id() + i;
+				var soilId = getDestinationId(seedToSoil, seedId);
+				var fertilizerId = getDestinationId(soilToFertilizer, soilId);
+				var waterId = getDestinationId(fertilizerToWater, fertilizerId);
+				var lightId = getDestinationId(waterToLight, waterId);
+				var temperatureId = getDestinationId(lightToTemperature, lightId);
+				var humidityId = getDestinationId(temperatureToHumidity, temperatureId);
+				var locationId = getDestinationId(humidityToLocation, humidityId);
 
-			if (locationId < lowestLocation) {
-				lowestLocation = locationId;
+				if (locationId < lowestLocation) {
+					lowestLocation = locationId;
+				}
 			}
 		}
 
@@ -117,7 +124,7 @@ public class Day5 {
 		};
 	}
 
-	private List<Seed> parseSeed(String line) {
+	private static List<Seed> parseSeedPartOne(String line) {
 		String[] seeds = line.trim().split("\\s+");
 		List<Seed> list = new ArrayList<>();
 		for (int i = 1; i < seeds.length; i++) {
@@ -127,7 +134,20 @@ public class Day5 {
 		return list;
 	}
 
-	private record Seed(long id) {
+	private static List<Seed> parseSeedPartTwo(String line) {
+		String[] seeds = line.trim().split("\\s+");
+		List<Seed> list = new ArrayList<>();
+		for (int i = 1; i < seeds.length - 1; i+=2) {
+			list.add(new Seed(Long.parseLong(seeds[i]), Long.parseLong(seeds[i+1])));
+		}
+
+		return list;
+	}
+
+	private record Seed(long id, long rangeLength) {
+		private Seed(long id) {
+			this(id, 1);
+		}
 	}
 
 	private record Mapping(long destination, long source, long rangeLength) {
