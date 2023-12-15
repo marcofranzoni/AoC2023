@@ -10,7 +10,8 @@ import java.util.regex.Pattern;
 
 public class Day6 {
 
-	private static final Pattern LINE_PATTERN = Pattern.compile(".*:\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)");
+	private static final Pattern LINE_PATTERN_PART_ONE = Pattern.compile(".*:\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)");
+	private static final Pattern LINE_PATTERN_PART_TWO = Pattern.compile(".*:(.*)");
 	private static final int NUMBER_OF_RACES = 4;
 	private static final int FILE_ROWS = 2;
 
@@ -22,6 +23,9 @@ public class Day6 {
 				.reduce(1, (a, b) -> a * b);
 
 		System.out.println("partOne=" + partOne);
+
+		var partTwo = calculateWaysToBeatRecord(solution.toRace(path));
+		System.out.println("partTwo=" + partTwo);
 
 	}
 
@@ -41,7 +45,7 @@ public class Day6 {
 		int[][] matrix = new int[FILE_ROWS][NUMBER_OF_RACES];
 
 		for (int i = 0; i < lines.size(); i++) {
-			Matcher matcher = LINE_PATTERN.matcher(lines.get(i));
+			Matcher matcher = LINE_PATTERN_PART_ONE.matcher(lines.get(i));
 
 			if (matcher.matches()) {
 				for (int j = 0; j < NUMBER_OF_RACES; j++) {
@@ -57,7 +61,7 @@ public class Day6 {
 		int hold = 1;
 		int result = 0;
 		while (hold <= race.time) {
-			int evaluatedDistance = (race.time() - hold) * hold;
+			long evaluatedDistance = (race.time() - hold) * hold;
 			if (evaluatedDistance > race.distance()) {
 				result++;
 			}
@@ -68,7 +72,29 @@ public class Day6 {
 		return result;
 	}
 
-	private record Race(int time, int distance) {
+	private Race toRace(Path path) throws IOException {
+		List<String> lines = Files.readAllLines(path);
+
+		retrieveNumber(lines.getFirst());
+		retrieveNumber(lines.getLast());
+
+		var race = new Race(retrieveNumber(lines.getFirst()), retrieveNumber(lines.getLast()));
+
+		System.out.println(race);
+
+		return race;
+	}
+
+	private static long retrieveNumber(String line) {
+		var matcher = LINE_PATTERN_PART_TWO.matcher(line);
+		if (matcher.matches()) {
+			return Long.parseLong(matcher.group(1).replace(" ", ""));
+		}
+
+		return 0;
+	}
+
+	private record Race(long time, long distance) {
 	}
 
 }
