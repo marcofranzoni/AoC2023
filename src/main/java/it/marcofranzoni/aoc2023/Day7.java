@@ -7,8 +7,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.LongPredicate;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -23,19 +24,44 @@ public class Day7 {
 		Day7 solution = new Day7();
 		Path path = Path.of("src", "main", "resources", "day7.txt");
 
-		buildMap();
-
 		var partOne = solution.partOne(path);
-
 		System.out.println("partOne=" + partOne);
+		System.out.println(partOne==249204891);
+
+		var partTwo = solution.partTwo(path);
+		System.out.println("partTwo=" + partTwo);
+		System.out.println(partTwo==249666369);
+
 	}
 
 	private int partOne(Path path) throws IOException {
+		buildMapPartOne();
+
 		int sum;
 		try (Stream<String> stream = Files.lines(path)) {
 			List<Hand> hands = stream.map(this::toHand)
-					.sorted(new HandRankingComparator())
+					.sorted(new HandRankingComparatorPartOne())
 					.toList();
+
+			sum = IntStream.range(0, hands.size())
+					.map(i -> hands.get(i).bid * (i + 1))
+					.sum();
+
+		}
+
+		return sum;
+	}
+
+	private int partTwo(Path path) throws IOException {
+		buildMapPartTwo();
+
+		int sum;
+		try (Stream<String> stream = Files.lines(path)) {
+			List<Hand> hands = stream.map(this::toHand)
+					.sorted(new HandRankingComparatorPartTwo())
+					.toList();
+
+			System.out.println(hands);
 
 			sum = IntStream.range(0, hands.size())
 					.map(i -> hands.get(i).bid * (i + 1))
@@ -63,11 +89,11 @@ public class Day7 {
 
 	}
 
-	private static void buildMap() {
+	private static void buildMapPartOne() {
 		CARDS.put("2", 2);
 		CARDS.put("3", 3);
-		CARDS.put("4", 4);
 		CARDS.put("5", 5);
+		CARDS.put("4", 4);
 		CARDS.put("6", 6);
 		CARDS.put("7", 7);
 		CARDS.put("8", 8);
@@ -79,11 +105,40 @@ public class Day7 {
 		CARDS.put("A", 14);
 	}
 
+	private static void buildMapPartTwo() {
+		CARDS.put("J", 1);
+	}
+
 	private record Hand(String value, int bid) {
-		long getStrength() {
-			return value.chars().mapToLong(c -> buildOccurrenceMap().get((char) c))
-					.filter(isNotOne())
-					.map(l -> buildStrengthMap().get((int) l))
+		long getStrengthPartOne() {
+
+			return buildOccurrenceMap().values().stream()
+					.filter(isGreaterThanOne())
+					.mapToLong(l -> buildStrengthMap().get(l))
+					.sum();
+		}
+
+		long getStrengthPartTwo() {
+			long numberOfJ = value.chars().filter(ch -> ch == 'J').count();
+
+			Map<Character, Long> occurrenceMap = buildOccurrenceMap();
+
+			Optional<Map.Entry<Character, Long>> maxEntry = occurrenceMap.entrySet().stream()
+					.filter(e -> e.getKey() != 'J')
+					.max(Map.Entry.comparingByValue());
+
+			if (numberOfJ > 0 && numberOfJ < 5) {
+				maxEntry.ifPresent(entry -> {
+					long updatedValue = entry.getValue() + numberOfJ;
+					occurrenceMap.put(entry.getKey(), updatedValue);
+				});
+				occurrenceMap.put('J', 0L);
+			}
+
+			return occurrenceMap.values()
+					.stream()
+					.filter(isGreaterThanOne())
+					.mapToLong(l -> buildStrengthMap().get(l))
 					.sum();
 		}
 
@@ -122,15 +177,15 @@ public class Day7 {
 		 *
 		 * @return map of the points
 		 */
-		private Map<Integer, Integer> buildStrengthMap() {
-			return Map.of(2, 1,
-					3, 3,
-					4, 5,
-					5, 6);
+		private Map<Long, Long> buildStrengthMap() {
+			return Map.of(2L, 1L,
+					3L, 3L,
+					4L, 5L,
+					5L, 6L);
 		}
 
-		private LongPredicate isNotOne() {
-			return v -> v != 1;
+		private Predicate<Long> isGreaterThanOne() {
+			return v -> v > 1;
 		}
 
 		private Map<Character, Long> buildOccurrenceMap() {
@@ -142,22 +197,43 @@ public class Day7 {
 		}
 	}
 
-	private static class HandRankingComparator implements Comparator<Hand> {
+	private static class HandRankingComparatorPartOne implements Comparator<Hand> {
 
 		@Override
 		public int compare(Hand first, Hand second) {
 
-			if (first.getStrength() == second.getStrength()) {
+			if (first.getStrengthPartOne() == second.getStrengthPartOne()) {
 				for (int i = 0; i < HAND_LENGTH; i++) {
 					if (first.value.charAt(i) != second.value.charAt(i)) {
 						return CARDS.get(String.valueOf(first.value.charAt(i))) - CARDS.get(String.valueOf(second.value.charAt(i)));
 					}
 				}
-			} else {
-				return Long.compare(first.getStrength(), second.getStrength());
 			}
 
-			return 0;
+			return Long.compare(first.getStrengthPartOne(), second.getStrengthPartOne());
+
+		}
+
+	}
+
+	private static class HandRankingComparatorPartTwo implements Comparator<Hand> {
+
+		@Override
+		public int compare(Hand first, Hand second) {
+
+			long firstStrength = first.getStrengthPartTwo();
+			long secondStrength = second.getStrengthPartTwo();
+
+			if (firstStrength == secondStrength) {
+				for (int i = 0; i < HAND_LENGTH; i++) {
+					if (first.value.charAt(i) != second.value.charAt(i)) {
+						return CARDS.get(String.valueOf(first.value.charAt(i))) - CARDS.get(String.valueOf(second.value.charAt(i)));
+					}
+				}
+			}
+
+			return Long.compare(firstStrength, secondStrength);
+
 		}
 
 	}
