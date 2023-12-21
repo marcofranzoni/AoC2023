@@ -26,11 +26,11 @@ public class Day7 {
 
 		var partOne = solution.partOne(path);
 		System.out.println("partOne=" + partOne);
-		System.out.println(partOne==249204891);
+		System.out.println(partOne == 249204891);
 
 		var partTwo = solution.partTwo(path);
 		System.out.println("partTwo=" + partTwo);
-		System.out.println(partTwo==249666369);
+		System.out.println(partTwo == 249666369);
 
 	}
 
@@ -40,7 +40,7 @@ public class Day7 {
 		int sum;
 		try (Stream<String> stream = Files.lines(path)) {
 			List<Hand> hands = stream.map(this::toHand)
-					.sorted(new HandRankingComparatorPartOne())
+					.sorted(new HandRankingComparator(Hand::getStrengthPartOne))
 					.toList();
 
 			sum = IntStream.range(0, hands.size())
@@ -58,7 +58,7 @@ public class Day7 {
 		int sum;
 		try (Stream<String> stream = Files.lines(path)) {
 			List<Hand> hands = stream.map(this::toHand)
-					.sorted(new HandRankingComparatorPartTwo())
+					.sorted(new HandRankingComparator(Hand::getStrengthPartTwo))
 					.toList();
 
 			System.out.println(hands);
@@ -197,45 +197,26 @@ public class Day7 {
 		}
 	}
 
-	private static class HandRankingComparatorPartOne implements Comparator<Hand> {
+	private record HandRankingComparator(Function<Hand, Long> strengthFunction) implements Comparator<Hand> {
 
 		@Override
 		public int compare(Hand first, Hand second) {
-
-			if (first.getStrengthPartOne() == second.getStrengthPartOne()) {
-				for (int i = 0; i < HAND_LENGTH; i++) {
-					if (first.value.charAt(i) != second.value.charAt(i)) {
-						return CARDS.get(String.valueOf(first.value.charAt(i))) - CARDS.get(String.valueOf(second.value.charAt(i)));
-					}
-				}
-			}
-
-			return Long.compare(first.getStrengthPartOne(), second.getStrengthPartOne());
-
-		}
-
-	}
-
-	private static class HandRankingComparatorPartTwo implements Comparator<Hand> {
-
-		@Override
-		public int compare(Hand first, Hand second) {
-
-			long firstStrength = first.getStrengthPartTwo();
-			long secondStrength = second.getStrengthPartTwo();
+			long firstStrength = strengthFunction.apply(first);
+			long secondStrength = strengthFunction.apply(second);
 
 			if (firstStrength == secondStrength) {
 				for (int i = 0; i < HAND_LENGTH; i++) {
-					if (first.value.charAt(i) != second.value.charAt(i)) {
-						return CARDS.get(String.valueOf(first.value.charAt(i))) - CARDS.get(String.valueOf(second.value.charAt(i)));
+					char firstChar = first.value.charAt(i);
+					char secondChar = second.value.charAt(i);
+
+					if (firstChar != secondChar) {
+						return Integer.compare(CARDS.get(String.valueOf(firstChar)), CARDS.get(String.valueOf(secondChar)));
 					}
 				}
 			}
 
 			return Long.compare(firstStrength, secondStrength);
-
 		}
-
 	}
 
 }
