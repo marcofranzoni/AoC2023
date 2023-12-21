@@ -18,6 +18,10 @@ import java.util.stream.Stream;
 public class Day7 {
 	private static final Pattern LINE_PATTERN = Pattern.compile("(.*)\\s+(\\d+)");
 	private static final Map<String, Integer> CARDS = new HashMap<>();
+	private static final Map<Long, Long> STRENGTH_MAP = Map.of(2L, 1L,
+			3L, 3L,
+			4L, 5L,
+			5L, 6L);
 	private static final int HAND_LENGTH = 5;
 
 	public static void main(String[] args) throws Exception {
@@ -37,39 +41,25 @@ public class Day7 {
 	private int partOne(Path path) throws IOException {
 		buildMapPartOne();
 
-		int sum;
+		return calculateSum(path, Hand::getStrengthPartOne);
+	}
+
+	private int calculateSum(Path path, Function<Hand, Long> getStrength) throws IOException {
 		try (Stream<String> stream = Files.lines(path)) {
 			List<Hand> hands = stream.map(this::toHand)
-					.sorted(new HandRankingComparator(Hand::getStrengthPartOne))
+					.sorted(new HandRankingComparator(getStrength))
 					.toList();
 
-			sum = IntStream.range(0, hands.size())
+			return IntStream.range(0, hands.size())
 					.map(i -> hands.get(i).bid * (i + 1))
 					.sum();
-
 		}
-
-		return sum;
 	}
 
 	private int partTwo(Path path) throws IOException {
 		buildMapPartTwo();
 
-		int sum;
-		try (Stream<String> stream = Files.lines(path)) {
-			List<Hand> hands = stream.map(this::toHand)
-					.sorted(new HandRankingComparator(Hand::getStrengthPartTwo))
-					.toList();
-
-			System.out.println(hands);
-
-			sum = IntStream.range(0, hands.size())
-					.map(i -> hands.get(i).bid * (i + 1))
-					.sum();
-
-		}
-
-		return sum;
+		return calculateSum(path, Hand::getStrengthPartTwo);
 	}
 
 	private Hand toHand(String line) {
@@ -86,7 +76,6 @@ public class Day7 {
 		}
 
 		return hand;
-
 	}
 
 	private static void buildMapPartOne() {
@@ -111,10 +100,9 @@ public class Day7 {
 
 	private record Hand(String value, int bid) {
 		long getStrengthPartOne() {
-
 			return buildOccurrenceMap().values().stream()
 					.filter(isGreaterThanOne())
-					.mapToLong(l -> buildStrengthMap().get(l))
+					.mapToLong(STRENGTH_MAP::get)
 					.sum();
 		}
 
@@ -128,60 +116,16 @@ public class Day7 {
 					.max(Map.Entry.comparingByValue());
 
 			if (numberOfJ > 0 && numberOfJ < 5) {
-				maxEntry.ifPresent(entry -> {
-					long updatedValue = entry.getValue() + numberOfJ;
-					occurrenceMap.put(entry.getKey(), updatedValue);
-				});
+				maxEntry.ifPresent(entry ->
+						occurrenceMap.put(entry.getKey(), entry.getValue() + numberOfJ));
 				occurrenceMap.put('J', 0L);
 			}
 
 			return occurrenceMap.values()
 					.stream()
 					.filter(isGreaterThanOne())
-					.mapToLong(l -> buildStrengthMap().get(l))
+					.mapToLong(STRENGTH_MAP::get)
 					.sum();
-		}
-
-		/**
-		 * Output map
-		 * <table>
-		 *   <tr>
-		 *     <th>Cards</th>
-		 *     <th>Strength</th>
-		 *   </tr>
-		 *   <tr>
-		 *     <td>2</td>
-		 *     <td>1</td>
-		 *   </tr>
-		 *   <tr>
-		 *     <td>2 2</td>
-		 *     <td>2</td>
-		 *   </tr>
-		 *   <tr>
-		 *     <td>3</td>
-		 *     <td>3</td>
-		 *   </tr>
-		 *   <tr>
-		 *     <td>2 3</td>
-		 *     <td>4</td>
-		 *   </tr>
-		 *   <tr>
-		 *     <td>4</td>
-		 *     <td>5</td>
-		 *   </tr>
-		 *   <tr>
-		 *     <td>5</td>
-		 *     <td>6</td>
-		 *   </tr>
-		 * </table>
-		 *
-		 * @return map of the points
-		 */
-		private Map<Long, Long> buildStrengthMap() {
-			return Map.of(2L, 1L,
-					3L, 3L,
-					4L, 5L,
-					5L, 6L);
 		}
 
 		private Predicate<Long> isGreaterThanOne() {
