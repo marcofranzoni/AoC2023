@@ -1,12 +1,14 @@
 package it.marcofranzoni.aoc2023;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,19 +26,19 @@ public class Day8 {
 		String steps = getSteps(lines);
 		createStepMap(lines);
 
-		int partOne = solution.partOne(steps);
+		int partOne = solution.partOne(steps, STEPS.get("AAA"), s -> s.equals("ZZZ"));
 		System.out.println("partOne=" + partOne);
 		System.out.println(partOne == 17263);
 
-		int partTwo = solution.partTwo(steps);
+		var partTwo = solution.partTwo(steps);
 		System.out.println("partTwo=" + partTwo);
 	}
 
-	private int partOne(String steps) {
+	private int partOne(String steps, NextStep first, Predicate<String> stop) {
 		int i = 0;
 		int totalSteps = 0;
 		String nextElement;
-		NextStep nextStep = STEPS.get("AAA");
+		NextStep nextStep = first;
 
 		do {
 			char instruction = steps.charAt(i);
@@ -44,7 +46,7 @@ public class Day8 {
 			nextStep = STEPS.get(nextElement);
 			totalSteps++;
 			i = (i + 1) % steps.length();
-		} while (!nextElement.equals("ZZZ"));
+		} while (stop.negate().test(nextElement));
 
 		return totalSteps;
 	}
@@ -68,33 +70,35 @@ public class Day8 {
 		return lines.getFirst();
 	}
 
-	private int partTwo(String steps) {
-
-		int i = 0;
-		int totalSteps = 0;
-
+	private BigInteger partTwo(String steps) {
 		List<String> nextElements = STEPS.keySet().stream().filter(nextStep -> nextStep.endsWith("A")).toList();
 		List<NextStep> nextSteps = getNextSteps(nextElements);
 
-		do {
-			char instruction = steps.charAt(i);
-			nextElements = getNextElements(nextSteps, instruction);
-			nextSteps = getNextSteps(nextElements);
-			totalSteps++;
-			i = (i + 1) % steps.length();
-		} while (!nextElements.stream().allMatch(str -> str.endsWith("Z")));
-
-		return totalSteps;
-	}
-
-	private List<String> getNextElements(List<NextStep> nextSteps, char instruction) {
-		List<String> outcome = new ArrayList<>();
+		List<BigInteger> paths = new ArrayList<>();
 
 		for (NextStep nextStep : nextSteps) {
-			outcome.add(nextStep.get(instruction));
+			int numberOfSteps = partOne(steps, nextStep, str -> str.endsWith("Z"));
+			paths.add(BigInteger.valueOf(numberOfSteps));
 		}
 
-		return outcome;
+		return findLCM(paths);
+	}
+
+	public static BigInteger findLCM(List<BigInteger> numbers) {
+		BigInteger result = numbers.getFirst();
+
+		for (int i = 1; i < numbers.size(); i++) {
+			result = lcm(result, numbers.get(i));
+		}
+
+		return result;
+	}
+
+	public static BigInteger lcm(BigInteger first, BigInteger second) {
+		BigInteger gcd = first.gcd(second);
+		BigInteger absProduct = first.multiply(second).abs();
+
+		return absProduct.divide(gcd);
 	}
 
 	private List<NextStep> getNextSteps(List<String> nextElements) {
