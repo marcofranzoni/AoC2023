@@ -16,7 +16,11 @@ public class Day9 {
 		Day9 solution = new Day9();
 		int partOne = solution.solvePartOne(lines);
 		System.out.println("partOne=" + partOne);
-		System.out.println(partOne==1861775706);
+		System.out.println(partOne == 1861775706);
+
+		int partTwo = solution.solvePartTwo(lines);
+		System.out.println("partTwo=" + partTwo);
+		System.out.println(partTwo == 1082);
 	}
 
 	private static List<List<Integer>> readLines(Path path) throws IOException {
@@ -43,15 +47,12 @@ public class Day9 {
 
 
 	private int solvePartOne(List<List<Integer>> lines) {
-		int sum = 0;
-		for (var line : lines) {
-			sum += (line.getLast() + solveLine(line));
-		}
-
-		return sum;
+		return lines.stream()
+				.mapToInt(line -> line.getLast() + solveLinePartOne(line))
+				.sum();
 	}
 
-	private int solveLine(List<Integer> line) {
+	private int solveLinePartOne(List<Integer> line) {
 		boolean allZero = line.stream().allMatch(n -> n == 0);
 		if (allZero) {
 			return 0;
@@ -62,6 +63,26 @@ public class Day9 {
 			nextLine.add(line.get(i + 1) - line.get(i));
 		}
 
-		return nextLine.getLast() + solveLine(nextLine);
+		return nextLine.getLast() + solveLinePartOne(nextLine);
+	}
+
+	private int solvePartTwo(List<List<Integer>> lines) {
+		return lines.stream()
+				.mapToInt(line -> line.getFirst() - solveLinePartTwo(line))
+				.sum();
+	}
+
+	private int solveLinePartTwo(List<Integer> line) {
+		boolean allZero = line.stream().allMatch(n -> n == 0);
+		if (allZero) {
+			return 0;
+		}
+
+		List<Integer> nextLine = new ArrayList<>();
+		for (int i = 0; i < line.size() - 1; i++) {
+			nextLine.add(line.get(i + 1) - line.get(i));
+		}
+
+		return nextLine.getFirst() - solveLinePartTwo(nextLine);
 	}
 }
