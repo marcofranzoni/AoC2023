@@ -3,6 +3,7 @@ package it.marcofranzoni.aoc2023;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,16 +21,18 @@ public class Day8 {
 
 		List<String> lines = solution.readInputFile(path);
 
-		int partOne = solution.partOne(lines);
-		System.out.println("partOne=" + partOne);
-		System.out.println(partOne == 17263);
-	}
-
-	private int partOne(List<String> lines) {
-
 		String steps = getSteps(lines);
 		createStepMap(lines);
 
+		int partOne = solution.partOne(steps);
+		System.out.println("partOne=" + partOne);
+		System.out.println(partOne == 17263);
+
+		int partTwo = solution.partTwo(steps);
+		System.out.println("partTwo=" + partTwo);
+	}
+
+	private int partOne(String steps) {
 		int i = 0;
 		int totalSteps = 0;
 		String nextElement;
@@ -50,7 +53,7 @@ public class Day8 {
 		return Files.readAllLines(path);
 	}
 
-	private void createStepMap(List<String> lines) {
+	private static void createStepMap(List<String> lines) {
 
 		for (int i = 1; i < lines.size(); i++) {
 			Matcher matcher = LINE_PATTERN.matcher(lines.get(i));
@@ -59,19 +62,55 @@ public class Day8 {
 				STEPS.put(matcher.group(1), new NextStep(matcher.group(2), matcher.group(3)));
 			}
 		}
-
-		System.out.println(STEPS);
 	}
 
-	private String getSteps(List<String> lines) {
+	private static String getSteps(List<String> lines) {
 		return lines.getFirst();
+	}
+
+	private int partTwo(String steps) {
+
+		int i = 0;
+		int totalSteps = 0;
+
+		List<String> nextElements = STEPS.keySet().stream().filter(nextStep -> nextStep.endsWith("A")).toList();
+		List<NextStep> nextSteps = getNextSteps(nextElements);
+
+		do {
+			char instruction = steps.charAt(i);
+			nextElements = getNextElements(nextSteps, instruction);
+			nextSteps = getNextSteps(nextElements);
+			totalSteps++;
+			i = (i + 1) % steps.length();
+		} while (!nextElements.stream().allMatch(str -> str.endsWith("Z")));
+
+		return totalSteps;
+	}
+
+	private List<String> getNextElements(List<NextStep> nextSteps, char instruction) {
+		List<String> outcome = new ArrayList<>();
+
+		for (NextStep nextStep : nextSteps) {
+			outcome.add(nextStep.get(instruction));
+		}
+
+		return outcome;
+	}
+
+	private List<NextStep> getNextSteps(List<String> nextElements) {
+		List<NextStep> nextSteps = new ArrayList<>();
+
+		for (String node : nextElements) {
+			nextSteps.add(STEPS.get(node));
+		}
+
+		return nextSteps;
 	}
 
 	private record NextStep(String left, String right) {
 		String get(char instruction) {
 			return instruction == 'L' ? left : right;
 		}
-
 	}
 
 
