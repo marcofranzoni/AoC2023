@@ -81,17 +81,11 @@ public class Day8 {
 			paths.add(BigInteger.valueOf(numberOfSteps));
 		}
 
-		return findLCM(paths);
+		return totalLcm(paths);
 	}
 
-	public static BigInteger findLCM(List<BigInteger> numbers) {
-		BigInteger result = numbers.getFirst();
-
-		for (int i = 1; i < numbers.size(); i++) {
-			result = lcm(result, numbers.get(i));
-		}
-
-		return result;
+	public static BigInteger totalLcm(List<BigInteger> numbers) {
+		return numbers.stream().reduce(BigInteger.ONE, Day8::lcm);
 	}
 
 	public static BigInteger lcm(BigInteger first, BigInteger second) {
