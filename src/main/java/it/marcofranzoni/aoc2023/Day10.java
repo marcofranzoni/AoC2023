@@ -3,13 +3,15 @@ package it.marcofranzoni.aoc2023;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Day10 {
 
 	private static final int MAP_SIZE = 140;
 	private static char[][] matrix;
-	private static Coordinate start;
+	private Coordinate start;
+	private final List<Coordinate> loop = new ArrayList<>();
 
 	public static void main(String[] args) throws IOException {
 		Path path = Path.of("src", "main", "resources", "day10.txt");
@@ -21,6 +23,9 @@ public class Day10 {
 		System.out.println("partOne=" + partOne);
 		System.out.println(partOne == 6968);
 
+		int partTwo = solution.solvePartTwo();
+		System.out.println("partTwo=" + partTwo);
+		System.out.println(partTwo == 413);
 	}
 
 	private void createMatrix(Path path) throws IOException {
@@ -28,7 +33,7 @@ public class Day10 {
 
 		matrix = new char[MAP_SIZE][MAP_SIZE];
 
-		for (int i = 0; i < lines.size(); i++) {
+		for (int i = 0; i < MAP_SIZE; i++) {
 			for (int j = 0; j < MAP_SIZE; j++) {
 				char sign = lines.get(i).charAt(j);
 				matrix[i][j] = sign;
@@ -41,18 +46,20 @@ public class Day10 {
 	}
 
 	private int solvePartOne() {
-		return findPath(start, Direction.ANY, 0) / 2;
+		return findPathLength(start, Direction.ANY, 0) / 2;
 	}
 
-	int findPath(Coordinate coordinate, Direction direction, int numberOfSteps) {
+	private int findPathLength(Coordinate coordinate, Direction direction, int numberOfSteps) {
 		if (matrix[coordinate.y()][coordinate.x()] == Tile.START.getSign() && numberOfSteps > 0) {
 			return numberOfSteps;
 		}
 
-		Coordinate nextMove = nextMove(coordinate, direction);
-		Direction newDirection = getDirection(coordinate, nextMove);
+		loop.add(coordinate);
 
-		return findPath(nextMove, newDirection, numberOfSteps + 1);
+		var nextMove = nextMove(coordinate, direction);
+		var newDirection = getDirection(coordinate, nextMove);
+
+		return findPathLength(nextMove, newDirection, numberOfSteps + 1);
 	}
 
 	private Coordinate nextMove(Coordinate coordinate, Direction inputDirection) {
@@ -110,6 +117,39 @@ public class Day10 {
 
 	private char getSign(Coordinate coordinate) {
 		return matrix[coordinate.y()][coordinate.x()];
+	}
+
+	private int solvePartTwo() {
+		int sum = 0;
+		for (int i = 0; i < MAP_SIZE; i++) {
+			for (int j = 0; j < MAP_SIZE; j++) {
+				var evaluatingCoordinate = new Coordinate(j, i);
+				if (!loop.contains(evaluatingCoordinate) && isInsideLoop(new Coordinate(j, i))) {
+					sum++;
+				}
+			}
+		}
+
+		return sum;
+	}
+
+	private boolean isInsideLoop(Coordinate coordinate) {
+		List<Coordinate> points = loop.stream().filter(c -> c.y() == coordinate.y())
+				.filter(c -> coordinate.x() > c.x())
+				.toList();
+
+		int boudaries = 0;
+		for (var point : points) {
+			char sign = matrix[point.y()][point.x()];
+			if (sign == Tile.VERTICAL_PIPE.getSign()
+					|| sign == Tile.L_BEND.getSign()
+					|| sign == Tile.J_BEND.getSign()) {
+				boudaries++;
+			}
+
+		}
+
+		return boudaries % 2 != 0;
 	}
 
 	private record Coordinate(int x, int y) {
