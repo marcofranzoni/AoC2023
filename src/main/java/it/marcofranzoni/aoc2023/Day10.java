@@ -134,22 +134,15 @@ public class Day10 {
 	}
 
 	private boolean isInsideLoop(Coordinate coordinate) {
-		List<Coordinate> points = loop.stream().filter(c -> c.y() == coordinate.y())
-				.filter(c -> coordinate.x() > c.x())
-				.toList();
+		long boundaries = loop.stream()
+				.filter(c -> c.y() == coordinate.y() && coordinate.x() > c.x())
+				.map(c -> matrix[c.y()][c.x()])
+				.filter(sign -> sign == Tile.VERTICAL_PIPE.getSign()
+						|| sign == Tile.L_BEND.getSign()
+						|| sign == Tile.J_BEND.getSign())
+				.count();
 
-		int boudaries = 0;
-		for (var point : points) {
-			char sign = matrix[point.y()][point.x()];
-			if (sign == Tile.VERTICAL_PIPE.getSign()
-					|| sign == Tile.L_BEND.getSign()
-					|| sign == Tile.J_BEND.getSign()) {
-				boudaries++;
-			}
-
-		}
-
-		return boudaries % 2 != 0;
+		return boundaries % 2 != 0;
 	}
 
 	private record Coordinate(int x, int y) {
